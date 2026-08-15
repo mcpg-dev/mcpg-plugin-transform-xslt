@@ -1,0 +1,37 @@
+[package]
+name = "mcpg-plugin-transform-xslt"
+version = "0.1.0-alpha.15"
+license = "Apache-2.0"
+edition = "2024"
+description = """
+XSLT transform plugin for mcpg. Applies an operator-supplied XSLT stylesheet to
+input XML — usable as a global pre/post-dispatch transform and (via the pipeline
+plugin_transform bridge) as a pipeline step that reshapes the previous step's XML
+output. The XSLT engine (xrust) is pure-Rust and linked here only; the gateway
+core never depends on it.
+"""
+
+[lib]
+# cdylib: the .so the gateway's native_loader dlopens. rlib: in-tree unit
+# tests + workspace compile.
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# Default OFF so a plain workspace build emits the rlib (no
+# mcpg_plugin_register) and doesn't clash with the other plugin rlibs.
+# Standalone cdylib builds opt in (--features cdylib-export).
+default = []
+cdylib-export = []
+static-firstparty = []
+
+[dependencies]
+mcpg-plugin-protocol = { git = "https://github.com/mcpg-dev/mcpg-plugin-protocol", tag = "v0.1.0-beta.13", version = "=0.1.0-beta.13" }
+mcpg-plugin-sdk      = { git = "https://github.com/mcpg-dev/mcpg-plugin-sdk", tag = "v0.1.0-beta.13", version = "=0.1.0-beta.13", features = ["static-firstparty"] }
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Pure-Rust XPath/XSLT engine — no system lib, no FFI, no OpenSSL. The xslt
+# feature is on by default.
+xrust = "2.1"
+# Pure-Rust XML reader for the `xml_to_json` output projection (MIT). No TLS, no
+# system libs.
+quick-xml = "0.39"

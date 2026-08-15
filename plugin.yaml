@@ -1,0 +1,15 @@
+schema: mcpg.dev/plugin/v1
+id: dev.mcpg.transform.xslt
+name: XSLT Transform
+license: Apache-2.0
+description: |
+  Applies an operator-supplied XSLT stylesheet to input XML. As a global
+  transform it reshapes tool arguments (pre-dispatch) and/or results
+  (post-dispatch); as a pipeline `plugin_transform` step it reshapes the
+  previous step's XML output into the next step's input. The `input` config
+  field (JSON Pointer / dotted path) selects the XML string within the value;
+  the serialized XSLT output is returned as a JSON string. Pure compute — no I/O.
+class: transform
+runtime: native-cdylib-v1
+protocol_version: "1.0"
+required_capabilities: []
