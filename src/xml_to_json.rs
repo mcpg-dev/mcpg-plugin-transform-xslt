@@ -24,9 +24,9 @@ fn attrs_of(e: &BytesStart<'_>) -> Result<Vec<(String, String)>, String> {
     let mut out = Vec::new();
     for a in e.attributes() {
         let a = a.map_err(|e| format!("xml attribute: {e}"))?;
-        let key = String::from_utf8_lossy(a.key.as_ref()).into_owned();
+        let key = a.key.as_ref().to_owned();
         let val = a
-            .unescape_value()
+            .normalized_value(quick_xml::XmlVersion::Implicit1_0)
             .map_err(|e| format!("xml attribute value: {e}"))?
             .into_owned();
         out.push((key, val));
@@ -75,8 +75,7 @@ fn resolve_entity(r: &BytesRef<'_>) -> Result<String, String> {
             Err(e) => Err(format!("xml char ref: {e}")),
         };
     }
-    let name = r.decode().map_err(|e| format!("xml entity: {e}"))?;
-    match name.as_ref() {
+    match r.as_ref() {
         "amp" => Ok("&".to_owned()),
         "lt" => Ok("<".to_owned()),
         "gt" => Ok(">".to_owned()),
@@ -103,7 +102,7 @@ pub fn xml_to_json(input: &str) -> Result<Value, String> {
                 });
             }
             Ok(Event::Empty(e)) => {
-                let tag = String::from_utf8_lossy(e.name().as_ref()).into_owned();
+                let tag = e.name().as_ref().to_owned();
                 let node = Node {
                     attrs: attrs_of(&e)?,
                     ..Node::default()
@@ -112,7 +111,7 @@ pub fn xml_to_json(input: &str) -> Result<Value, String> {
                 insert_child(&mut parent.children, tag, finalize(node));
             }
             Ok(Event::End(e)) => {
-                let tag = String::from_utf8_lossy(e.name().as_ref()).into_owned();
+                let tag = e.name().as_ref().to_owned();
                 let node = stack.pop().ok_or("xml: unbalanced end tag")?;
                 if stack.is_empty() {
                     return Err("xml: unbalanced end tag".to_owned());
@@ -122,7 +121,7 @@ pub fn xml_to_json(input: &str) -> Result<Value, String> {
                 insert_child(&mut parent.children, tag, val);
             }
             Ok(Event::Text(e)) => {
-                let t = e.decode().map_err(|e| format!("xml text: {e}"))?;
+                let t = e.into_inner();
                 stack
                     .last_mut()
                     .expect("sentinel always present")
@@ -130,7 +129,7 @@ pub fn xml_to_json(input: &str) -> Result<Value, String> {
                     .push_str(&t);
             }
             Ok(Event::CData(e)) => {
-                let t = e.decode().map_err(|e| format!("xml cdata: {e}"))?;
+                let t = e.into_inner();
                 stack
                     .last_mut()
                     .expect("sentinel always present")
