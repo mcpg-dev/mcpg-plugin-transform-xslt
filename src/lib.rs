@@ -260,8 +260,6 @@ fn apply_xslt(
     ctxt.context(vec![Item::Node(srcdoc.clone())], 0);
     let result_doc = RNode::new_document();
     ctxt.result_document(result_doc);
-    ctxt.populate_key_values(&mut stctxt, srcdoc.clone())
-        .map_err(|e| format!("xslt: key setup failed: {}", e.message))?;
 
     let seq = ctxt
         .evaluate(&mut stctxt)
@@ -288,7 +286,13 @@ fn parse_xml(input: &str) -> Result<RNode, XrustError> {
     xml_parse(
         doc.clone(),
         input,
-        Some(|_: &_| Err(ParseError::MissingNameSpace)),
+        Some(|_: &_| {
+            Err(ParseError::MissingNameSpace {
+                prefix: None,
+                nsuri: None,
+                message: None,
+            })
+        }),
     )?;
     Ok(doc)
 }

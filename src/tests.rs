@@ -57,6 +57,22 @@ fn extracts_text_value() {
 }
 
 #[test]
+fn key_lookup_finds_the_indexed_node() {
+    let p = XsltTransform::new("{}");
+    let cfg = json!({
+        "stylesheet": r#"<xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>
+  <xsl:key name='by-id' match='item' use='@id'/>
+  <xsl:template match='/'><xsl:value-of select="key('by-id', 'b')"/></xsl:template>
+</xsl:stylesheet>"#
+    });
+    let input = json!("<list><item id='a'>first</item><item id='b'>second</item></list>");
+    match p.transform_result(&ctx(), &input, &cfg) {
+        TransformResult::Modified { value } => assert_eq!(value, json!("second")),
+        other => panic!("expected Modified, got {other:?}"),
+    }
+}
+
+#[test]
 fn identity_copy_round_trip() {
     let p = XsltTransform::new("{}");
     let cfg = json!({
